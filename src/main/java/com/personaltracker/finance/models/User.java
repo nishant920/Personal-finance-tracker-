@@ -18,10 +18,12 @@ public class User {
     private String email;
 
     @Column(nullable = false)
-    private String password;
+    private String password; // stored hashed
 
     private String name;
 
+    private boolean verified;
+
     @Column(precision = 12, scale = 2)
-    private BigDecimal currentBalance; // Gross account balance
+    private BigDecimal currentBalance = BigDecimal.ZERO;
 }
