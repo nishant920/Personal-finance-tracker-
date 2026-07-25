@@ -68,6 +68,23 @@ public class BalanceService {
     }
 
     /**
+     * Calculates Free-to-Spend for a given User entity.
+     */
+    public BigDecimal calculateFreeToSpend(User user) {
+        BigDecimal currentBalance = user.getCurrentBalance() != null ? user.getCurrentBalance() : BigDecimal.ZERO;
+
+        List<Commitment> pendingCommitments = commitmentRepository.findByUserIdAndStatus(user.getId(), CommitmentStatus.PENDING);
+
+        BigDecimal reserved = pendingCommitments.stream()
+                .map(c -> c.getAmount() != null ? c.getAmount() : BigDecimal.ZERO)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        log.info("User ID {}: Current Balance = {}, Reserved = {}", user.getId(), currentBalance, reserved);
+
+        return currentBalance.subtract(reserved);
+    }
+
+    /**
      * Checks if a proposed spend amount eats into committed money for the authenticated user.
      */
     public SpendRiskResponseDto checkSpendRisk(BigDecimal proposedAmount) {
@@ -97,23 +114,6 @@ public class BalanceService {
                 .remainingAfterSpend(remainingAfterSpend)
                 .message(message)
                 .build();
-    }
-
-    /**
-     * Calculates Free-to-Spend for a given User entity.
-     */
-    public BigDecimal calculateFreeToSpend(User user) {
-        BigDecimal currentBalance = user.getCurrentBalance() != null ? user.getCurrentBalance() : BigDecimal.ZERO;
-
-        List<Commitment> pendingCommitments = commitmentRepository.findByUserIdAndStatus(user.getId(), CommitmentStatus.PENDING);
-
-        BigDecimal reserved = pendingCommitments.stream()
-                .map(c -> c.getAmount() != null ? c.getAmount() : BigDecimal.ZERO)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        log.info("User ID {}: Current Balance = {}, Reserved = {}", user.getId(), currentBalance, reserved);
-
-        return currentBalance.subtract(reserved);
     }
 
     /**

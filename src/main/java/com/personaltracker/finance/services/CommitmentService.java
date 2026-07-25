@@ -15,6 +15,10 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Service managing financial commitments (EMIs, bills, subscriptions, rent).
+ * Handles creation, status updates, deletion, and user-scoped data retrieval.
+ */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -22,6 +26,13 @@ public class CommitmentService {
 
     private final CommitmentRepository commitmentRepository;
 
+    /**
+     * Extracts the currently authenticated User entity directly from the SecurityContext.
+     * Prevents security vulnerabilities by ensuring users can only interact with their own data.
+     *
+     * @return Currently authenticated User
+     * @throws BadRequestException if no valid user is present in the security context
+     */
     private User getAuthenticatedUser() {
         Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         if (principal instanceof User) {
@@ -30,6 +41,12 @@ public class CommitmentService {
         throw new BadRequestException("No authenticated user found in security context");
     }
 
+    /**
+     * Maps a Commitment database entity into a clean response DTO for API clients.
+     *
+     * @param commitment The database entity to transform
+     * @return CommitmentResponseDto populated with commitment fields
+     */
     private CommitmentResponseDto mapToResponseDto(Commitment commitment) {
         return CommitmentResponseDto.builder()
                 .id(commitment.getId())
@@ -41,6 +58,13 @@ public class CommitmentService {
                 .build();
     }
 
+    /**
+     * Creates a new financial commitment for the currently authenticated user.
+     * Defaults the commitment status to PENDING if not explicitly specified.
+     *
+     * @param requestDto Payload containing commitment details (name, amount, dueDate, frequency)
+     * @return CommitmentResponseDto containing the created commitment details
+     */
     public CommitmentResponseDto createCommitment(CommitmentRequestDto requestDto) {
         User currentUser = getAuthenticatedUser();
 
@@ -58,6 +82,11 @@ public class CommitmentService {
         return mapToResponseDto(savedCommitment);
     }
 
+    /**
+     * Retrieves all commitments (both PENDING and PAID) belonging to the authenticated user.
+     *
+     * @return List of CommitmentResponseDto items
+     */
     public List<CommitmentResponseDto> getAllCommitmentsForCurrentUser() {
         User currentUser = getAuthenticatedUser();
         return commitmentRepository.findByUserId(currentUser.getId()).stream()
@@ -65,6 +94,12 @@ public class CommitmentService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Retrieves only unpaid/pending commitments for the authenticated user.
+     * Used by BalanceService to calculate total reserved funds.
+     *
+     * @return List of PENDING CommitmentResponseDto items
+     */
     public List<CommitmentResponseDto> getPendingCommitmentsForCurrentUser() {
         User currentUser = getAuthenticatedUser();
         return commitmentRepository.findByUserIdAndStatus(currentUser.getId(), CommitmentStatus.PENDING).stream()
@@ -72,6 +107,13 @@ public class CommitmentService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Marks a specific commitment as PAID for the authenticated user.
+     * Once paid, the commitment is no longer reserved, increasing the user's Free-to-Spend balance.
+     *
+     * @param commitmentId ID of the commitment to update
+     * @return Updated CommitmentResponseDto with status PAID
+     */
     public CommitmentResponseDto markAsPaid(Long commitmentId) {
         User currentUser = getAuthenticatedUser();
         Commitment commitment = commitmentRepository.findByIdAndUserId(commitmentId, currentUser.getId())
@@ -84,6 +126,12 @@ public class CommitmentService {
         return mapToResponseDto(updatedCommitment);
     }
 
+    /**
+     * Permanently deletes a commitment belonging to the authenticated user.
+     * Ensures strict user ownership validation before deletion.
+     *
+     * @param commitmentId ID of the commitment to delete
+     */
     public void deleteCommitment(Long commitmentId) {
         User currentUser = getAuthenticatedUser();
         Commitment commitment = commitmentRepository.findByIdAndUserId(commitmentId, currentUser.getId())

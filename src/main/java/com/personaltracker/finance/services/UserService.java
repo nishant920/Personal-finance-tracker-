@@ -18,6 +18,10 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
+/**
+ * Service managing user authentication, account registration, email verification,
+ * and credential validation.
+ */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -30,6 +34,15 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final MailService mailService;
 
+    /**
+     * Registers a new user account in the system.
+     * Encodes the raw password with BCrypt, sets initial verification status to false,
+     * generates an email verification token expiring in 30 minutes, and dispatches a verification email.
+     *
+     * @param userDto DTO containing user registration details (name, email, password)
+     * @return Saved User entity
+     * @throws UserAlreadyExistsException if an account with the provided email already exists
+     */
     public User registerUser(UserDto userDto) {
         User existingUser = userRepository.findByEmail(userDto.getEmail());
         if (existingUser != null) {
@@ -56,6 +69,15 @@ public class UserService {
         return savedUser;
     }
 
+    /**
+     * Verifies a user's account using the provided email verification token.
+     * Validates token presence and expiration, sets the user's verified status to true,
+     * and deletes the consumed verification token from the database.
+     *
+     * @param token UUID verification token string
+     * @return Success message string
+     * @throws BadRequestException if token is invalid or has expired
+     */
     public String verifyEmail(String token) {
         VerificationToken verificationToken = verificationRepository.findByToken(token)
                 .orElseThrow(() -> new BadRequestException("Invalid verification token"));
@@ -73,6 +95,17 @@ public class UserService {
         return "Email verified successfully! You can now log in.";
     }
 
+    /**
+     * Authenticates a user's login credentials.
+     * Verifies the email exists, compares the raw password against the BCrypt hash,
+     * ensures the email has been verified, and issues a signed JWT authentication token.
+     *
+     * @param email User login email address
+     * @param password User login raw password
+     * @return Signed JWT authentication token string
+     * @throws InvalidCredentialsException if email is not found or password does not match
+     * @throws BadRequestException if the user has not verified their email address
+     */
     public String isValidCredentials(String email, String password) {
         User user = userRepository.findByEmail(email);
 
