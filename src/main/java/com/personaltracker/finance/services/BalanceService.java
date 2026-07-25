@@ -102,7 +102,7 @@ public class BalanceService {
 
         boolean risk = remainingAfterSpend.compareTo(BigDecimal.ZERO) < 0;
         String message = risk
-                ? "This spend eats into ₹" + remainingAfterSpend.abs() + " of your committed money"
+                ? "This spend eats into ₹" + remainingAfterSpend + " of your committed money"
                 : null;
 
         log.info("Check Spend Risk for User ID {}: Proposed = {}, FreeBefore = {}, Remaining = {}, Risk = {}",
