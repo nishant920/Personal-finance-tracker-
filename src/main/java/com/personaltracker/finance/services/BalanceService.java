@@ -1,5 +1,7 @@
 package com.personaltracker.finance.services;
 
+import com.personaltracker.finance.dtos.BalanceResponseDto;
+import com.personaltracker.finance.dtos.SpendRiskResponseDto;
 import com.personaltracker.finance.enums.CommitmentStatus;
 import com.personaltracker.finance.exceptions.BadRequestException;
 import com.personaltracker.finance.models.Commitment;
@@ -23,6 +25,33 @@ public class BalanceService {
     private final CommitmentRepository commitmentRepository;
 
     /**
+     * Updates the current balance for the authenticated user and returns updated balance details.
+     */
+    public BalanceResponseDto updateBalanceForCurrentUser(BigDecimal newBalance) {
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        User currentUser;
+        if (principal instanceof User) {
+            currentUser = (User) principal;
+        } else {
+            throw new BadRequestException("No authenticated user found in security context");
+        }
+
+        currentUser.setCurrentBalance(newBalance);
+        User savedUser = userRepository.save(currentUser);
+
+        BigDecimal freeToSpend = calculateFreeToSpend(savedUser);
+
+        log.info("Updated Current Balance for User ID {}: New Balance = {}, Free-to-Spend = {}",
+                savedUser.getId(), savedUser.getCurrentBalance(), freeToSpend);
+
+        return BalanceResponseDto.builder()
+                .currentBalance(savedUser.getCurrentBalance())
+                .freeToSpend(freeToSpend)
+                .build();
+    }
+
+    /**
      * Calculates Free-to-Spend for the currently authenticated user automatically from SecurityContext.
      */
     public BigDecimal freeToSpendForCurrentUser() {
@@ -36,6 +65,38 @@ public class BalanceService {
         }
 
         return calculateFreeToSpend(currentUser);
+    }
+
+    /**
+     * Checks if a proposed spend amount eats into committed money for the authenticated user.
+     */
+    public SpendRiskResponseDto checkSpendRisk(BigDecimal proposedAmount) {
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        User currentUser;
+        if (principal instanceof User) {
+            currentUser = (User) principal;
+        } else {
+            throw new BadRequestException("No authenticated user found in security context");
+        }
+
+        BigDecimal freeToSpendBefore = calculateFreeToSpend(currentUser);
+        BigDecimal remainingAfterSpend = freeToSpendBefore.subtract(proposedAmount);
+
+        boolean risk = remainingAfterSpend.compareTo(BigDecimal.ZERO) < 0;
+        String message = risk
+                ? "This spend eats into ₹" + remainingAfterSpend.abs() + " of your committed money"
+                : null;
+
+        log.info("Check Spend Risk for User ID {}: Proposed = {}, FreeBefore = {}, Remaining = {}, Risk = {}",
+                currentUser.getId(), proposedAmount, freeToSpendBefore, remainingAfterSpend, risk);
+
+        return SpendRiskResponseDto.builder()
+                .risk(risk)
+                .freeToSpendBefore(freeToSpendBefore)
+                .remainingAfterSpend(remainingAfterSpend)
+                .message(message)
+                .build();
     }
 
     /**
