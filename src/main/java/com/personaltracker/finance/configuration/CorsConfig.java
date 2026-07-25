@@ -20,7 +20,8 @@ public class CorsConfig implements WebMvcConfigurer {
                         "https://6a6516e397faf3d8b680f0e4--clinquant-bubblegum-a0389d.netlify.app",
                         "https://*.netlify.app",
                         "http://localhost:*",
-                        "http://127.0.0.1:*"
+                        "http://127.0.0.1:*",
+                        "http://16.171.253.225:8081"
                 )
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
                 .allowedHeaders("*")
@@ -34,7 +35,8 @@ public class CorsConfig implements WebMvcConfigurer {
                 "https://6a6516e397faf3d8b680f0e4--clinquant-bubblegum-a0389d.netlify.app",
                 "https://*.netlify.app",
                 "http://localhost:*",
-                "http://127.0.0.1:*"
+                "http://127.0.0.1:*",
+                "http://16.171.253.225:8081"
         ));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
