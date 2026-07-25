@@ -36,4 +36,10 @@ public class TransactionController {
         List<TransactionResponseDto> transactions = transactionService.getTransactionsByTypeForCurrentUser(type);
         return new ResponseEntity<>(transactions, HttpStatus.OK);
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<String> deleteTransaction(@PathVariable("id") Long id) {
+        transactionService.deleteTransaction(id);
+        return new ResponseEntity<>("Transaction deleted successfully", HttpStatus.OK);
+    }
 }

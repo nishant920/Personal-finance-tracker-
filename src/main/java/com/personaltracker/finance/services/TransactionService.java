@@ -113,4 +113,32 @@ public class TransactionService {
                 .map(this::mapToResponseDto)
                 .collect(Collectors.toList());
     }
+
+    /**
+     * Permanently deletes a transaction for the authenticated user and reverses its balance impact.
+     *
+     * @param transactionId ID of the transaction to delete
+     */
+    @Transactional
+    public void deleteTransaction(Long transactionId) {
+        User currentUser = getAuthenticatedUser();
+        Transaction transaction = transactionRepository.findByIdAndUserId(transactionId, currentUser.getId())
+                .orElseThrow(() -> new BadRequestException("Transaction not found with id: " + transactionId));
+
+        BigDecimal currentBalance = currentUser.getCurrentBalance() != null ? currentUser.getCurrentBalance() : BigDecimal.ZERO;
+        BigDecimal updatedBalance;
+
+        // Reverse transaction effect on currentBalance
+        if (transaction.getTransactionType() == TransactionType.SPEND) {
+            updatedBalance = currentBalance.add(transaction.getAmount());
+        } else {
+            updatedBalance = currentBalance.subtract(transaction.getAmount());
+        }
+
+        currentUser.setCurrentBalance(updatedBalance);
+        userRepository.save(currentUser);
+
+        transactionRepository.delete(transaction);
+        log.info("Deleted transaction ID {} for User ID {}. Reverted Balance: {}", transactionId, currentUser.getId(), updatedBalance);
+    }
 }
