@@ -38,4 +38,10 @@ public class AuthController {
         String message = userService.verifyEmail(token);
         return new ResponseEntity<>(message, HttpStatus.OK);
     }
+
+    @PostMapping("/resend-verification")
+    public ResponseEntity<String> resendVerificationEmail(@RequestParam("email") String email) {
+        String message = userService.resendVerificationEmail(email);
+        return new ResponseEntity<>(message, HttpStatus.OK);
+    }
 }

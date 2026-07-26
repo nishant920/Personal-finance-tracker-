@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -43,6 +44,7 @@ public class UserService {
      * @return Saved User entity
      * @throws UserAlreadyExistsException if an account with the provided email already exists
      */
+    @Transactional
     public User registerUser(UserDto userDto) {
         User existingUser = userRepository.findByEmail(userDto.getEmail());
         if (existingUser != null) {
@@ -70,6 +72,40 @@ public class UserService {
     }
 
     /**
+     * Resends a new verification email token to an unverified user.
+     *
+     * @param email User email address
+     * @return Success message string
+     */
+    @Transactional
+    public String resendVerificationEmail(String email) {
+        User user = userRepository.findByEmail(email);
+        if (user == null) {
+            throw new BadRequestException("User not found with email: " + email);
+        }
+
+        if (user.isVerified()) {
+            throw new BadRequestException("Email is already verified. You can log in directly.");
+        }
+
+        // Delete any pre-existing token for this user
+        verificationRepository.deleteByUserId(user.getId());
+
+        String newToken = UUID.randomUUID().toString();
+        VerificationToken verificationToken = new VerificationToken();
+        verificationToken.setToken(newToken);
+        verificationToken.setExpiryDate(LocalDateTime.now().plusMinutes(30));
+        verificationToken.setUser(user);
+
+        verificationRepository.save(verificationToken);
+
+        mailService.sendVerificationEmail(user.getEmail(), user.getName(), newToken);
+        log.info("Resent new verification token {} to user {}", newToken, user.getEmail());
+
+        return "Verification email sent successfully! Please check your inbox.";
+    }
+
+    /**
      * Verifies a user's account using the provided email verification token.
      * Validates token presence and expiration, sets the user's verified status to true,
      * and deletes the consumed verification token from the database.
@@ -78,6 +114,7 @@ public class UserService {
      * @return Success message string
      * @throws BadRequestException if token is invalid or has expired
      */
+    @Transactional
     public String verifyEmail(String token) {
         VerificationToken verificationToken = verificationRepository.findByToken(token)
                 .orElseThrow(() -> new BadRequestException("Invalid verification token"));
