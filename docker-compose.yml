@@ -32,6 +32,7 @@ services:
       DB_USERNAME: postgres
       DB_PASSWORD: postgres
       JWT_SECRET: super-secret-key-change-in-production-12345
+      APP_BASE_URL: http://16.171.253.225:8080
       MAIL_USERNAME: ${MAIL_USERNAME}
       MAIL_PASSWORD: ${MAIL_PASSWORD}
     depends_on:
