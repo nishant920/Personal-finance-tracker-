@@ -8,6 +8,17 @@ Unlike traditional budget trackers that only record past expenses, this system c
 
 ---
 
+## 🔑 Demo / Direct Login Credentials
+
+To immediately test the live application without needing email verification, use these pre-seeded demo credentials:
+
+* **E-mail**: `dummy@gmail.com`
+* **Password**: `password`
+
+*(Note: The backend automatically seeds this verified account on startup via `DataInitializer`).*
+
+---
+
 ## 🎯 Core Product Vision & Formula
 
 ### **The Problem**
