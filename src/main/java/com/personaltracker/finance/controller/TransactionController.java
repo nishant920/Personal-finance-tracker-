@@ -42,4 +42,10 @@ public class TransactionController {
         transactionService.deleteTransaction(id);
         return new ResponseEntity<>("Transaction deleted successfully", HttpStatus.OK);
     }
+
+    @GetMapping("/category/{category}")
+    public ResponseEntity<List<TransactionResponseDto>> getTransactionByCategory(@PathVariable String category){
+        List<TransactionResponseDto> responseDto = transactionService.getAllTransactionsByCategory(category);
+        return new ResponseEntity<>(responseDto, HttpStatus.OK);
+    }
 }

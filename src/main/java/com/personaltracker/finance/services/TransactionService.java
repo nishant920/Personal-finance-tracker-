@@ -141,4 +141,25 @@ public class TransactionService {
         transactionRepository.delete(transaction);
         log.info("Deleted transaction ID {} for User ID {}. Reverted Balance: {}", transactionId, currentUser.getId(), updatedBalance);
     }
+
+    @Transactional
+    public List<TransactionResponseDto> getAllTransactionsByCategory(String category){
+        User currentUser = getAuthenticatedUser();
+        return transactionRepository.findByUserIdAndCategory(currentUser.getId(), category).
+                stream().
+                map(this::mapToResponseDto).
+                collect(Collectors.toList());
+
+        /*
+        List<Transaction> entites = transactionRepository.findByUserIdAndCategory(currentUser.getId(), category);
+
+        * List<TransactionResponseDtos> listDto = new ArrayList<>();
+         for(Transaction transaction : entites){
+            TransactionResponseDto dto = mapToResponseDto(transaction);
+            listDto.add(dto);
+         }
+         return dtoList;
+         */
+
+    }
 }
