@@ -29,3 +29,6 @@ public class Transaction {
     private String note;
     private LocalDateTime timestamp;
 }
+
+//precision = 12: This is the total number of digits allowed in the entire number (both to the left and to the right of the decimal point).
+// scale = 2: This is the number of digits allowed after the decimal point (the fractional part).

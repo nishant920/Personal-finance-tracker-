@@ -1,9 +1,6 @@
 package com.personaltracker.finance.controller;
 
-import com.personaltracker.finance.dtos.BalanceResponseDto;
-import com.personaltracker.finance.dtos.SpendRiskRequestDto;
-import com.personaltracker.finance.dtos.SpendRiskResponseDto;
-import com.personaltracker.finance.dtos.UpdateBalanceRequestDto;
+import com.personaltracker.finance.dtos.*;
 import com.personaltracker.finance.services.BalanceService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -20,8 +17,15 @@ public class BalanceController {
 
     private final BalanceService balanceService;
 
-    @PutMapping
-    public ResponseEntity<BalanceResponseDto> updateBalance(@Valid @RequestBody UpdateBalanceRequestDto requestDto) {
+    //why we are using dto even for a single param in methode like BalanceRequestDto where there is only one entity in class?
+    @PostMapping("/add")
+    public ResponseEntity<?> addBalance(@RequestBody BalanceRequestDto requestDto){
+        BalanceResponseDto responseDto = balanceService.addBalanceForCurrentUser(requestDto);
+        return new ResponseEntity<>(responseDto, HttpStatus.OK);
+    }
+
+    @PutMapping("/update")
+    public ResponseEntity<BalanceResponseDto> updateBalance(@Valid @RequestBody BalanceRequestDto requestDto) {
         BalanceResponseDto responseDto = balanceService.updateBalanceForCurrentUser(requestDto.getBalance());
         return new ResponseEntity<>(responseDto, HttpStatus.OK);
     }

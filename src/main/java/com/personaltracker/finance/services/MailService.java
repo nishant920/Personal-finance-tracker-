@@ -12,7 +12,7 @@ public class MailService {
 
     private final JavaMailSender mailSender;
 
-    @Value("${app.base.url:http://localhost:8080}")
+    @Value("${app.base.url}")
     private String appBaseUrl;
 
     public MailService(JavaMailSender mailSender) {

@@ -11,7 +11,7 @@ import java.math.BigDecimal;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class UpdateBalanceRequestDto {
+public class BalanceRequestDto {
 
     @NotNull(message = "Balance is required")
     @DecimalMin(value = "0.00", message = "Balance cannot be negative")

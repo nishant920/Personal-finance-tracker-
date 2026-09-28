@@ -1,9 +1,11 @@
 package com.personaltracker.finance.services;
 
+import com.personaltracker.finance.dtos.BalanceRequestDto;
 import com.personaltracker.finance.dtos.BalanceResponseDto;
 import com.personaltracker.finance.dtos.SpendRiskResponseDto;
 import com.personaltracker.finance.enums.CommitmentStatus;
 import com.personaltracker.finance.exceptions.BadRequestException;
+import com.personaltracker.finance.exceptions.InvalidCredentialsException;
 import com.personaltracker.finance.models.Commitment;
 import com.personaltracker.finance.models.User;
 import com.personaltracker.finance.repositories.CommitmentRepository;
@@ -27,6 +29,31 @@ public class BalanceService {
     /**
      * Updates the current balance for the authenticated user and returns updated balance details.
      */
+
+
+    public BalanceResponseDto addBalanceForCurrentUser(BalanceRequestDto balanceRequestDto){
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+
+        User currentUser;
+        if (principal instanceof User) {
+            currentUser = (User) principal;
+        } else {
+            throw new BadRequestException("No authenticated user found in security context");
+        }
+
+        BigDecimal finalBalance = currentUser.getCurrentBalance().add(balanceRequestDto.getBalance());
+        
+        currentUser.setCurrentBalance(finalBalance);
+        User savedUser = userRepository.save(currentUser);
+
+        BigDecimal freeToSpend = calculateFreeToSpend(savedUser);
+
+        return BalanceResponseDto.builder()
+                .currentBalance(savedUser.getCurrentBalance())
+                .freeToSpend(freeToSpend)
+                .build();
+    }
+
     public BalanceResponseDto updateBalanceForCurrentUser(BigDecimal newBalance) {
         Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
