@@ -16,7 +16,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -104,6 +106,40 @@ public class TransactionService {
                 .collect(Collectors.toList());
     }
 
+    /*
+    * spend v/s earn
+    * transaction by category
+    * */
+    public void transactionAnalysis(){
+        User currentUser = getAuthenticatedUser();
+        List<TransactionResponseDto> transactions = getAllTransactionsForCurrentUser();
+        BigDecimal spend = BigDecimal.valueOf(0);
+        BigDecimal income = BigDecimal.valueOf(0);
+        for(TransactionResponseDto transaction : transactions){
+            if(transaction.getTransactionType().equals(TransactionType.SPEND)){
+                spend = spend.add(transaction.getAmount());
+            }
+            if(transaction.getTransactionType().equals(TransactionType.INCOME)){
+                income = income.add(transaction.getAmount());
+            }
+            BigDecimal totalPercentage = spend.divide(income).multiply(BigDecimal.valueOf(100));
+        }
+
+        Map<String, BigDecimal> categoryTotal = transactions.stream().collect(Collectors.groupingBy(
+                TransactionResponseDto::getCategory,
+                Collectors.reducing(
+                        BigDecimal.ZERO,
+                        TransactionResponseDto::getAmount,
+                        BigDecimal::add
+                )
+        ));
+
+        List<Map.Entry<String, BigDecimal>> top5Categories = categoryTotal.entrySet().stream()
+                .sorted(Map.Entry.<String, BigDecimal>comparingByValue().reversed())
+                .limit(5)
+                .collect(Collectors.toList());
+
+    }
     /**
      * Retrieves transaction history filtered by type (SPEND or INCOME).
      */

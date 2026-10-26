@@ -48,4 +48,9 @@ public class TransactionController {
         List<TransactionResponseDto> responseDto = transactionService.getAllTransactionsByCategory(category);
         return new ResponseEntity<>(responseDto, HttpStatus.OK);
     }
+
+    @GetMapping("/analysis")
+    public ResponseEntity<?> getTransactionAnalysis(){
+
+    }
 }
