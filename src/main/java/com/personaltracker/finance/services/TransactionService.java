@@ -1,5 +1,6 @@
 package com.personaltracker.finance.services;
 
+import com.personaltracker.finance.dtos.TransactionAnalysisDto;
 import com.personaltracker.finance.dtos.TransactionRequestDto;
 import com.personaltracker.finance.dtos.TransactionResponseDto;
 import com.personaltracker.finance.enums.TransactionType;
@@ -15,8 +16,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -106,39 +109,61 @@ public class TransactionService {
                 .collect(Collectors.toList());
     }
 
-    /*
-    * spend v/s earn
-    * transaction by category
-    * */
-    public void transactionAnalysis(){
+    /**
+     * Analyzes transactions for the authenticated user:
+     * - Total spend vs total income
+     * - Spend-to-income percentage
+     * - Top 5 spend categories ranked highest to lowest
+     */
+    public TransactionAnalysisDto getTransactionAnalysis() {
         User currentUser = getAuthenticatedUser();
         List<TransactionResponseDto> transactions = getAllTransactionsForCurrentUser();
-        BigDecimal spend = BigDecimal.valueOf(0);
-        BigDecimal income = BigDecimal.valueOf(0);
-        for(TransactionResponseDto transaction : transactions){
-            if(transaction.getTransactionType().equals(TransactionType.SPEND)){
-                spend = spend.add(transaction.getAmount());
+
+        BigDecimal totalSpend = BigDecimal.ZERO;
+        BigDecimal totalIncome = BigDecimal.ZERO;
+
+        for (TransactionResponseDto transaction : transactions) {
+            if (transaction.getTransactionType() == TransactionType.SPEND) {
+                totalSpend = totalSpend.add(transaction.getAmount());
+            } else if (transaction.getTransactionType() == TransactionType.INCOME) {
+                totalIncome = totalIncome.add(transaction.getAmount());
             }
-            if(transaction.getTransactionType().equals(TransactionType.INCOME)){
-                income = income.add(transaction.getAmount());
-            }
-            BigDecimal totalPercentage = spend.divide(income).multiply(BigDecimal.valueOf(100));
         }
 
-        Map<String, BigDecimal> categoryTotal = transactions.stream().collect(Collectors.groupingBy(
-                TransactionResponseDto::getCategory,
-                Collectors.reducing(
-                        BigDecimal.ZERO,
-                        TransactionResponseDto::getAmount,
-                        BigDecimal::add
-                )
-        ));
+        BigDecimal spendPercentage = BigDecimal.ZERO;
+        if (totalIncome.compareTo(BigDecimal.ZERO) > 0) {
+            spendPercentage = totalSpend
+                    .divide(totalIncome, 4, RoundingMode.HALF_UP)
+                    .multiply(BigDecimal.valueOf(100))
+                    .setScale(2, RoundingMode.HALF_UP);
+        }
 
-        List<Map.Entry<String, BigDecimal>> top5Categories = categoryTotal.entrySet().stream()
+        Map<String, BigDecimal> top5Categories = transactions.stream()
+                .filter(t -> t.getTransactionType() == TransactionType.SPEND && t.getCategory() != null && !t.getCategory().isBlank())
+                .collect(Collectors.groupingBy(
+                        TransactionResponseDto::getCategory,
+                        Collectors.reducing(
+                                BigDecimal.ZERO,
+                                TransactionResponseDto::getAmount,
+                                BigDecimal::add
+                        )
+                ))
+                .entrySet().stream()
                 .sorted(Map.Entry.<String, BigDecimal>comparingByValue().reversed())
                 .limit(5)
-                .collect(Collectors.toList());
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        Map.Entry::getValue,
+                        (e1, e2) -> e1,
+                        LinkedHashMap::new
+                ));
 
+        return TransactionAnalysisDto.builder()
+                .totalSpend(totalSpend)
+                .totalIncome(totalIncome)
+                .spendToIncomePercentage(spendPercentage)
+                .topCategories(top5Categories)
+                .build();
     }
     /**
      * Retrieves transaction history filtered by type (SPEND or INCOME).

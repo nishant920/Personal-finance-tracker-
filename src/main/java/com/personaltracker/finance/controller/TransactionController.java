@@ -1,5 +1,6 @@
 package com.personaltracker.finance.controller;
 
+import com.personaltracker.finance.dtos.TransactionAnalysisDto;
 import com.personaltracker.finance.dtos.TransactionRequestDto;
 import com.personaltracker.finance.dtos.TransactionResponseDto;
 import com.personaltracker.finance.enums.TransactionType;
@@ -50,7 +51,8 @@ public class TransactionController {
     }
 
     @GetMapping("/analysis")
-    public ResponseEntity<?> getTransactionAnalysis(){
-
+    public ResponseEntity<TransactionAnalysisDto> getTransactionAnalysis() {
+        TransactionAnalysisDto analysis = transactionService.getTransactionAnalysis();
+        return new ResponseEntity<>(analysis, HttpStatus.OK);
     }
 }

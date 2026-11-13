@@ -20,7 +20,7 @@ public class CorsConfig implements WebMvcConfigurer {
                         "https://*.netlify.app",
                         "http://localhost:*",
                         "http://127.0.0.1:*",
-                        "http://16.171.253.225:*",
+                        "http://16.192.142.51:*",
                         "http://16.171.146.241:*"
                 )
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS")
@@ -35,8 +35,7 @@ public class CorsConfig implements WebMvcConfigurer {
                 "https://*.netlify.app",
                 "http://localhost:*",
                 "http://127.0.0.1:*",
-                "http://16.171.253.225:*",
-                "http://16.171.146.241:*"
+                "http://16.192.142.51:*"
         ));
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));
